@@ -9,7 +9,9 @@ export const getDailyProductions = async (params = {}) => {
   const queryString = new URLSearchParams(params).toString()
   const url = queryString ? `/daily-productions?${queryString}` : '/daily-productions'
   const response = await apiClient.get(url)
-  return response.data.body
+  // Spring Page 객체 형식인 경우 content 추출, 배열인 경우 그대로 반환
+  const body = response.data.body
+  return Array.isArray(body) ? body : (body?.content || body)
 }
 
 /**
