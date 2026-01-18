@@ -61,6 +61,71 @@ q-track-frontend/
 └── package.json
 ```
 
+## Docker를 사용한 전체 환경 실행
+
+백엔드 서버와 프론트엔드를 Docker로 함께 실행할 수 있습니다.
+
+### 1. 백엔드 레포지토리 클론
+
+프로젝트 루트 디렉토리에서 다음 명령어로 백엔드를 클론합니다:
+
+**PowerShell:**
+```powershell
+..\setup-backend.ps1
+```
+
+**또는 직접 클론:**
+```bash
+cd ..
+git clone https://github.com/getinthere-private-job/q-track-backend.git
+cd q-track-frontend
+```
+
+### 2. Docker Compose로 전체 환경 실행
+
+```bash
+docker-compose up --build
+```
+
+이 명령어는 다음 서비스들을 실행합니다:
+- **백엔드 서버**: `http://localhost:8080`
+- **프론트엔드**: `http://localhost:5173`
+- **MySQL 데이터베이스**: `localhost:3306`
+
+### 3. 개별 서비스 제어
+
+```bash
+# 모든 서비스 시작
+docker-compose up
+
+# 백그라운드에서 실행
+docker-compose up -d
+
+# 서비스 중지
+docker-compose down
+
+# 서비스 중지 및 볼륨 삭제
+docker-compose down -v
+
+# 로그 확인
+docker-compose logs -f
+
+# 특정 서비스만 재시작
+docker-compose restart backend
+```
+
+### 4. Docker 없이 로컬 실행 (개발 모드)
+
+백엔드와 데이터베이스만 Docker로 실행하고, 프론트엔드는 로컬에서 실행할 수도 있습니다:
+
+```bash
+# 백엔드와 DB만 실행
+docker-compose up backend db
+
+# 별도 터미널에서 프론트엔드 실행
+npm start
+```
+
 ## Spring Boot API 연동
 
 프록시 설정이 `vite.config.js`에 구성되어 있어 `/api`로 시작하는 모든 요청은 자동으로 `http://localhost:8080`으로 전달됩니다.

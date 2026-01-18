@@ -5,7 +5,7 @@ Spring Boot API와 React 프론트엔드 연동 테스트
 
 ## 연동 작업
 
-**Day 7-14: 연동 테스트**
+**Day 7-14: 연동 테스트** 
 - [ ] React에서 Spring Boot API 호출 테스트
 - [ ] CORS 설정 확인
 - [ ] 데이터 입력 → API → DB 저장 플로우 테스트
