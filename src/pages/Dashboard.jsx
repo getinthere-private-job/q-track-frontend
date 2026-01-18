@@ -1,21 +1,19 @@
 import Layout from '../components/Layout'
+import StatisticsTable from '../components/StatisticsTable'
 
 const Dashboard = () => {
   return (
     <Layout title="대시보드">
-      {/* 통계 카드 영역 (예약용) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        {/* KPI 카드들이 여기에 들어갈 예정 */}
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-          <p className="text-sm text-gray-600 mb-2">통계 카드 예약</p>
-        </div>
+      {/* 통계 테이블 영역 */}
+      <div className="space-y-6">
+        <StatisticsTable type="process" />
+        <StatisticsTable type="item" />
       </div>
 
-      {/* 그래프 영역 (예약용) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* 그래프들이 여기에 들어갈 예정 */}
+      {/* 그래프 영역 (Step 7에서 구현 예정) */}
+      <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-          <p className="text-sm text-gray-600">그래프 예약</p>
+          <p className="text-sm text-gray-600">그래프 예약 (Step 7)</p>
         </div>
       </div>
     </Layout>
