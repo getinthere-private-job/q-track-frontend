@@ -2,6 +2,11 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
+// 환경 변수에서 백엔드 URL 가져오기
+// Docker Compose 사용 시: API_BASE_URL=http://backend:8080
+// 로컬 개발 시: API_BASE_URL이 없으면 기본값 localhost:8080 사용
+const BACKEND_URL = process.env.API_BASE_URL || 'http://localhost:8080'
+
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
@@ -10,18 +15,17 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        // 백엔드가 Docker로 실행되어도 포트 매핑으로 localhost:8080 접근 가능
-        target: 'http://localhost:8080',
+        target: BACKEND_URL,
         changeOrigin: true,
         secure: false
       },
       '/login': {
-        target: 'http://localhost:8080',
+        target: BACKEND_URL,
         changeOrigin: true,
         secure: false
       },
       '/signup': {
-        target: 'http://localhost:8080',
+        target: BACKEND_URL,
         changeOrigin: true,
         secure: false
       }
