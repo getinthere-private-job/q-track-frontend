@@ -110,6 +110,13 @@ const ItemManagement = () => {
       setEditingItem(null)
     } catch (error) {
       console.error('부품 저장 실패:', error)
+      if (error.response?.status === 403) {
+        setFormErrors({ submit: '권한이 없습니다. MANAGER 이상 권한이 필요합니다.' })
+      } else if (error.response?.data?.msg) {
+        setFormErrors({ submit: error.response.data.msg })
+      } else {
+        setFormErrors({ submit: '저장에 실패했습니다. 다시 시도해주세요.' })
+      }
     }
   }
 
@@ -121,6 +128,13 @@ const ItemManagement = () => {
       setDeleteConfirmId(null)
     } catch (error) {
       console.error('부품 삭제 실패:', error)
+      if (error.response?.status === 403) {
+        alert('권한이 없습니다. ADMIN 권한이 필요합니다.')
+      } else if (error.response?.data?.msg) {
+        alert(error.response.data.msg)
+      } else {
+        alert('삭제에 실패했습니다. 다시 시도해주세요.')
+      }
     }
   }
 

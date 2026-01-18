@@ -1,9 +1,15 @@
 import { useState, useMemo } from 'react'
+import DatePicker, { registerLocale } from 'react-datepicker'
+import { ko } from 'date-fns/locale'
+import 'react-datepicker/dist/react-datepicker.css'
 import { useDailyProductions } from '../../hooks/useDailyProductions'
 import { useProcesses } from '../../hooks/useProcesses'
 import { useItems } from '../../hooks/useItems'
 import { useCreateQualityRecord, useUpdateQualityRecord } from '../../hooks/useQualityRecords'
 import useUserStore from '../../stores/userStore'
+
+// 한국어 로케일 등록
+registerLocale('ko', ko)
 
 const QualityRecordForm = () => {
   const user = useUserStore((state) => state.user)
@@ -19,6 +25,7 @@ const QualityRecordForm = () => {
     return item ? `${item.code} - ${item.name}` : itemId
   }
 
+  const [selectedDate, setSelectedDate] = useState(null)
   const [formData, setFormData] = useState({
     dailyProductionId: '',
     processId: '',
@@ -27,6 +34,22 @@ const QualityRecordForm = () => {
   })
   const [editingId, setEditingId] = useState(null)
   const [errors, setErrors] = useState({})
+
+  // Date 객체를 yyyy-MM-dd 형식으로 변환
+  const formatDate = (date) => {
+    if (!date) return ''
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
+  // 선택한 날짜에 해당하는 일별 생산 데이터 필터링
+  const filteredDailyProductions = useMemo(() => {
+    if (!selectedDate || !dailyProductions) return []
+    const selectedDateStr = formatDate(selectedDate)
+    return dailyProductions.filter((dp) => dp.productionDate === selectedDateStr)
+  }, [selectedDate, dailyProductions])
 
   // 총 수량 및 NG 비율 자동 계산
   const calculatedValues = useMemo(() => {
@@ -42,6 +65,21 @@ const QualityRecordForm = () => {
       isExceedingThreshold
     }
   }, [formData.okQuantity, formData.ngQuantity])
+
+  const handleDateChange = (date) => {
+    setSelectedDate(date)
+    // 날짜 변경 시 일별 생산 데이터 선택 초기화
+    setFormData((prev) => ({
+      ...prev,
+      dailyProductionId: ''
+    }))
+    if (errors.dailyProductionId) {
+      setErrors((prev) => ({
+        ...prev,
+        dailyProductionId: ''
+      }))
+    }
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -60,6 +98,10 @@ const QualityRecordForm = () => {
 
   const validate = () => {
     const newErrors = {}
+
+    if (!selectedDate) {
+      newErrors.selectedDate = '생산일을 선택하세요'
+    }
 
     if (!formData.dailyProductionId) {
       newErrors.dailyProductionId = '일별 생산 데이터를 선택하세요'
@@ -89,7 +131,7 @@ const QualityRecordForm = () => {
 
     // 총 수량 검증: 선택한 일별 생산 데이터의 총 생산량과 일치해야 함
     if (formData.dailyProductionId && formData.okQuantity && formData.ngQuantity) {
-      const selectedDailyProduction = dailyProductions?.find(
+      const selectedDailyProduction = filteredDailyProductions.find(
         (dp) => dp.id === parseInt(formData.dailyProductionId, 10)
       )
       if (selectedDailyProduction) {
@@ -137,6 +179,7 @@ const QualityRecordForm = () => {
       }
 
       // 폼 초기화
+      setSelectedDate(null)
       setFormData({
         dailyProductionId: '',
         processId: '',
@@ -147,7 +190,11 @@ const QualityRecordForm = () => {
       setErrors({})
     } catch (error) {
       // 에러 처리
-      if (error.response?.data?.msg) {
+      if (error.response?.status === 403) {
+        setErrors({ submit: '권한이 없습니다. 해당 기능을 사용할 권한이 필요합니다.' })
+      } else if (error.response?.status === 400) {
+        setErrors({ submit: error.response?.data?.msg || '입력 데이터를 확인해주세요.' })
+      } else if (error.response?.data?.msg) {
         setErrors({ submit: error.response.data.msg })
       } else {
         setErrors({ submit: '저장에 실패했습니다. 다시 시도해주세요.' })
@@ -156,6 +203,7 @@ const QualityRecordForm = () => {
   }
 
   const handleCancel = () => {
+    setSelectedDate(null)
     setFormData({
       dailyProductionId: '',
       processId: '',
@@ -197,6 +245,28 @@ const QualityRecordForm = () => {
           </div>
         )}
 
+        {/* 생산일 선택 */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            생산일 <span className="text-red-500">*</span>
+          </label>
+          <DatePicker
+            selected={selectedDate}
+            onChange={handleDateChange}
+            locale="ko"
+            dateFormat="yyyy-MM-dd"
+            placeholderText="생산일을 선택하세요"
+            showMonthDropdown
+            showYearDropdown
+            dropdownMode="select"
+            disabled={editingId !== null}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+            wrapperClassName="w-full"
+            calendarClassName="!scale-125"
+            popperClassName="z-50"
+          />
+        </div>
+
         {/* 일별 생산 데이터 선택 */}
         <div>
           <label htmlFor="dailyProductionId" className="block text-sm font-medium text-gray-700 mb-2">
@@ -207,18 +277,23 @@ const QualityRecordForm = () => {
             name="dailyProductionId"
             value={formData.dailyProductionId}
             onChange={handleChange}
-            disabled={editingId !== null || dailyProductionsLoading}
+            disabled={editingId !== null || dailyProductionsLoading || !selectedDate}
             className={`w-full px-4 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-slate-500 ${
               errors.dailyProductionId ? 'border-red-500' : 'border-gray-300'
             } disabled:bg-gray-100 disabled:cursor-not-allowed`}
           >
-            <option value="">일별 생산 데이터를 선택하세요</option>
-            {dailyProductions &&
-              dailyProductions.map((dp) => (
+            <option value="">{selectedDate ? '일별 생산 데이터를 선택하세요' : '먼저 생산일을 선택하세요'}</option>
+            {filteredDailyProductions && filteredDailyProductions.length > 0 ? (
+              filteredDailyProductions.map((dp) => (
                 <option key={dp.id} value={dp.id}>
                   {getDailyProductionLabel(dp)}
                 </option>
-              ))}
+              ))
+            ) : selectedDate ? (
+              <option value="" disabled>
+                선택한 날짜에 생산 데이터가 없습니다
+              </option>
+            ) : null}
           </select>
           {errors.dailyProductionId && <p className="mt-1 text-sm text-red-600">{errors.dailyProductionId}</p>}
         </div>

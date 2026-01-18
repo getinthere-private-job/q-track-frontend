@@ -53,6 +53,12 @@ const QualityRecordList = () => {
     return process ? `${process.code} - ${process.name}` : processId
   }
 
+  // 공정 순서 찾기 헬퍼
+  const getProcessSequence = (processId) => {
+    const process = processes?.find((p) => p.id === processId)
+    return process ? (process.sequence || 999) : 999 // sequence가 없으면 맨 뒤로
+  }
+
   // 일별 생산 데이터 찾기 헬퍼
   const getDailyProduction = (dailyProductionId) => {
     return dailyProductions?.find((dp) => dp.id === dailyProductionId) || null
@@ -175,6 +181,14 @@ const QualityRecordList = () => {
 
       if (codeA !== codeB) {
         return codeA > codeB ? 1 : -1
+      }
+
+      // 날짜와 부품코드가 같으면 공정 순서로 정렬 (W → P → 검)
+      const sequenceA = getProcessSequence(a.processId)
+      const sequenceB = getProcessSequence(b.processId)
+
+      if (sequenceA !== sequenceB) {
+        return sequenceA > sequenceB ? 1 : -1
       }
 
       return 0

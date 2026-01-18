@@ -14,8 +14,8 @@ const DailyProductionList = () => {
   const [selectedItemId, setSelectedItemId] = useState('')
   const [startDate, setStartDate] = useState(null)
   const [endDate, setEndDate] = useState(null)
-  const [sortColumn, setSortColumn] = useState(null)
-  const [sortDirection, setSortDirection] = useState('desc')
+  const [sortColumn, setSortColumn] = useState('productionDate') // 기본값: 날짜 정렬
+  const [sortDirection, setSortDirection] = useState('desc') // 기본값: 내림차순
 
   // Date 객체를 yyyy-MM-dd 형식으로 변환
   const formatDate = (date) => {
@@ -71,8 +71,6 @@ const DailyProductionList = () => {
           return true
         })
         .sort((a, b) => {
-          if (!sortColumn) return 0
-
           let aValue = a[sortColumn]
           let bValue = b[sortColumn]
 
