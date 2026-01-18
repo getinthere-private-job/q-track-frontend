@@ -22,17 +22,15 @@ const Header = () => {
         </div>
 
         {/* 우측: 사용자 정보 + 로그아웃 버튼 */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           {user ? (
             <>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-700">사용자:</span>
-                <span className="text-sm font-medium text-gray-900">{user.username}</span>
-                <span className="text-xs text-gray-500">({user.role})</span>
+              <div className="px-4 py-2 bg-white text-gray-700 border-2 border-gray-200 rounded-lg text-sm font-medium">
+                {user.username} <span className="text-xs text-gray-500">({user.role})</span>
               </div>
               <button
                 onClick={handleLogout}
-                className="px-3 py-1.5 text-sm bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition-colors"
+                className="px-4 py-2 bg-slate-800 text-white border-2 border-slate-800 rounded-lg text-sm font-medium shadow-md hover:bg-slate-700 hover:border-slate-700 transition-all duration-200"
               >
                 로그아웃
               </button>
