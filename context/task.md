@@ -244,7 +244,7 @@
   - 총 수량 자동 계산 표시 (OK + NG) - 프론트엔드 계산
   - NG 비율 자동 계산 표시 - 프론트엔드 계산
   - **데이터 검증**: `totalQuantity = okQuantity + ngQuantity` 검증 (프론트엔드에서)
-  - 업계 평균(0.5%) 초과 시 경고 표시 (`bg-yellow-50 border-l-4 border-yellow-400`)
+  - 업계 평균(0.5%) 초과 시 경고 표시 (`bg-slate-50 border-l-4 border-slate-400`)
   - 폼 UI만 작성 (API 연동 전)
 - [ ] ✅ **1단계 완료 확인**: QualityRecordForm 컴포넌트 UI 확인
 
@@ -261,7 +261,7 @@
 - [ ] **QualityRecordList** 컴포넌트 (`src/components/QualityRecordList.jsx`) 생성
   - 카드 안에 테이블 배치
   - 목록 표시 (테이블) - UI만
-  - **평가 필요 항목 강조 표시** (`evaluationRequired: true`) - `bg-orange-50 border-l-4 border-orange-400`
+  - **평가 필요 항목 강조 표시** (`evaluationRequired: true`) - `bg-slate-50 border-l-4 border-slate-400`
   - **평가 필요 항목 필터링** (평가 필요만 보기 옵션)
   - NG 비율 컬럼 강조 표시 (임계값 0.5% 초과 시) - `text-red-600` + 오른쪽 정렬
   - 평가 버튼 (평가 필요 항목만, `bg-blue-600`)

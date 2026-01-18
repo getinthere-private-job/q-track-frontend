@@ -95,7 +95,7 @@ Q-Track 프론트엔드 UI/UX 디자인 가이드입니다.
 - **너비**: 240px (w-60)
 - **배경색**: `bg-gray-50 border-r border-gray-200`
 - **메뉴 항목**: 대시보드, 데이터 입력, 품질 기록, 부품 관리 (권한별 표시)
-- **활성 메뉴**: `bg-blue-50 text-blue-600`
+- **활성 메뉴**: `bg-slate-50 text-slate-800`
 - **모바일**: 햄버거 메뉴로 토글
 
 #### Main Content (중앙 콘텐츠 영역)
@@ -120,10 +120,11 @@ Q-Track 프론트엔드 UI/UX 디자인 가이드입니다.
 - **텍스트 희미**: `text-gray-400`
 
 #### 2️⃣ Accent 색상 (버튼, 링크 - 1개만)
-- **버튼**: `bg-blue-600 hover:bg-blue-700`
-- **링크**: `text-blue-600 hover:text-blue-800`
-- **강조 요소**: `bg-blue-50 text-blue-600`
-- **❌ 주의**: Accent 색상은 **파란색 하나만** 사용 (초록, 보라, 주황 금지)
+- **버튼**: `bg-slate-800 hover:bg-slate-900`
+- **링크**: `text-slate-700 hover:text-slate-900`
+- **강조 요소**: `bg-slate-50 text-slate-800`
+- **❌ 주의**: Accent 색상은 **슬레이트/그레이 계열 하나만** 사용 (화려한 색상 금지)
+- **💡 참고**: 검정/하얀색 계열과 잘 어울리는 차분한 색상 (inblog.ai 스타일)
 
 #### 3️⃣ State 색상 (상태 표현용)
 
@@ -140,8 +141,9 @@ Q-Track 프론트엔드 UI/UX 디자인 가이드입니다.
 - **배경**: `bg-yellow-50`
 
 ### ❌ 금지 사항
-- **파랑 + 초록 + 보라 + 주황** 동시 사용 금지
-- Accent 색상은 파란색 하나만 사용
+- **화려한 색상** (파랑, 초록, 보라, 주황 등) 동시 사용 금지
+- **평가 필요 항목**: 주황색 대신 슬레이트 계열 사용 (`bg-slate-50 border-l-4 border-slate-400`)
+- Accent 색상은 슬레이트/그레이 계열 하나만 사용
 - State 색상은 상태 표현용으로만 사용 (버튼 색상 X)
 
 ---
@@ -217,15 +219,15 @@ Q-Track 프론트엔드 UI/UX 디자인 가이드입니다.
 
 #### 기본 버튼 (Accent 색상 사용)
 ```jsx
-<button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+<button className="px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-900 transition-colors">
   저장
 </button>
 ```
 
 #### 버튼 원칙
-- **Accent 색상**: 모든 버튼은 `bg-blue-600` 사용 (색상 통일)
+- **Accent 색상**: 모든 버튼은 `bg-slate-800` 사용 (색상 통일)
 - **취소/보조**: `bg-gray-300 hover:bg-gray-400 text-gray-800`
-- **❌ 금지**: 버튼마다 다른 색상 사용 (초록, 빨강, 보라 등)
+- **❌ 금지**: 버튼마다 다른 색상 사용 (화려한 색상 금지)
 
 #### 버튼 크기
 - **작은 버튼**: `px-3 py-1.5 text-sm`
@@ -234,19 +236,19 @@ Q-Track 프론트엔드 UI/UX 디자인 가이드입니다.
 
 #### 상태 표현 버튼 (State 색상은 버튼에 사용 안 함)
 - **OK/NG는 텍스트나 배경으로만 표현**
-- 버튼 색상은 항상 파란색 (Accent)
+- 버튼 색상은 항상 슬레이트/그레이 계열 (Accent)
 
 ### 입력 필드 (Input)
 ```jsx
-<input className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+<input className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent" />
 ```
 - **기본 스타일**: `border border-gray-300 rounded-lg`
-- **포커스**: `focus:ring-2 focus:ring-blue-500`
+- **포커스**: `focus:ring-2 focus:ring-slate-500`
 - **에러 상태**: `border-red-500`
 
 ### 드롭다운 (Select)
 ```jsx
-<select className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+<select className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-slate-500">
   {/* 옵션 */}
 </select>
 ```
@@ -294,7 +296,7 @@ Q-Track 프론트엔드 UI/UX 디자인 가이드입니다.
   <button className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg">
     취소
   </button>
-  <button className="px-4 py-2 bg-blue-600 text-white rounded-lg">
+  <button className="px-4 py-2 bg-slate-800 text-white rounded-lg">
     저장
   </button>
 </div>
@@ -572,7 +574,7 @@ Header/Sidebar/Title 구조를 유지해.
 - **배경**: `bg-white rounded-xl shadow-sm p-4`
 - **제목**: `text-sm font-medium text-gray-500` (위쪽 작게)
 - **그리드**: 최소화 (눈에 띄지 않게)
-- **색상**: 1~2개만 사용 (파란색 + 빨간색)
+- **색상**: 차분한 색상만 사용 (slate-700 + red-600, 화려한 색상 지양)
 - **범례**: 위쪽에 작게 표시 (필요시)
 - **업계 평균 기준선**: 점선으로 표시 (0.5%)
 
@@ -618,9 +620,9 @@ Header/Sidebar/Title 구조를 유지해.
 - ✅ **숫자는 항상 단위 포함**: `12,450` (단위), `0.87%` (% 포함)
 
 ##### 색상 사용
-- ✅ **NG 관련만 빨간색**: 총 NG, NG 비율 카드
-- ✅ **나머지는 중립 색상**: 회색 톤
-- ✅ **그래프**: 1~2개 색상만 사용
+- ✅ **NG 관련만 빨간색**: 총 NG, NG 비율 카드 (State 색상)
+- ✅ **나머지는 중립 색상**: 회색/슬레이트 톤
+- ✅ **그래프**: 차분한 색상만 사용 (slate/red 조합)
 
 ##### 정렬
 - ✅ **모든 요소**: 왼쪽 정렬 (`text-left`)
@@ -726,7 +728,7 @@ space-y-6
 ### 7.4 품질 기록 화면 (`/quality-records`)
 
 #### 평가 필요 항목 목록
-- **강조 표시**: `bg-orange-50 border-l-4 border-orange-400`
+- **강조 표시**: `bg-slate-50 border-l-4 border-slate-400` (차분한 그레이 톤)
 - **필터링**: 평가 필요만 보기 토글
 - **정렬**: NG 비율 기준 정렬
 
@@ -797,13 +799,14 @@ space-y-6
 - **아이콘**: `🔺` 또는 경고 아이콘 (선택)
 
 #### 평가 필요 행
-- **색상**: `bg-orange-50` (배경색)
-- **위치**: 왼쪽 테두리 강조 (`border-l-4 border-orange-400`)
+- **색상**: `bg-slate-50` (배경색, 차분한 그레이)
+- **위치**: 왼쪽 테두리 강조 (`border-l-4 border-slate-400`)
 - **아이콘**: `⚠️` 또는 알림 아이콘 (선택)
+- **💡 참고**: 주황색 대신 슬레이트 계열 사용 (차분한 색상 유지)
 
 ### 정렬 기능
 - **정렬 가능 컬럼**: 헤더에 화살표 아이콘 표시
-- **정렬 상태**: `text-blue-600` (정렬된 컬럼)
+- **정렬 상태**: `text-slate-800` (정렬된 컬럼)
 
 ---
 
@@ -811,10 +814,12 @@ space-y-6
 
 ### Chart.js 기본 설정
 
-#### 색상 팔레트
-- **기본 막대**: `rgba(59, 130, 246, 0.8)` (blue)
-- **임계값 초과**: `rgba(239, 68, 68, 0.8)` (red)
-- **업계 평균**: `rgba(107, 114, 128, 0.5)` (gray, 기준선)
+#### 색상 팔레트 (차분한 색상 사용)
+- **기본 막대**: `rgba(51, 65, 85, 0.8)` (slate-700, 차분한 그레이 톤)
+- **임계값 초과**: `rgba(239, 68, 68, 0.8)` (red-600, NG 강조용 - State 색상)
+- **업계 평균**: `rgba(148, 163, 184, 0.5)` (slate-400, 기준선 - 차분한 그레이)
+
+**💡 참고**: 그래프는 검정/하얀색 계열과 어울리는 차분한 색상 사용 (화려한 색상 지양)
 
 #### 그래프 옵션
 - **그리드**: 눈금선 표시 (`display: true`)
@@ -849,7 +854,7 @@ space-y-6
 ### 상호작용 및 피드백 (Feedback)
 
 #### 즉각적인 피드백
-- ✅ **버튼 클릭**: `hover:bg-blue-700 transition-colors` (시각적 상태 변화)
+- ✅ **버튼 클릭**: `hover:bg-slate-900 transition-colors` (시각적 상태 변화)
 - ✅ **로딩 상태**: 스피너 또는 스켈레톤 UI 표시 (`isLoading` 상태)
 - ✅ **성공 메시지**: 녹색 배경 + 확인 아이콘 (`bg-green-50 text-green-600`)
 - ✅ **에러 메시지**: 빨간 배경 + 경고 아이콘 (`bg-red-50 text-red-600`)
@@ -882,7 +887,7 @@ space-y-6
 
 #### 키보드 네비게이션
 - ✅ **Tab 키 접근**: 모든 인터랙티브 요소에 접근 가능
-- ✅ **포커스 표시**: 명확한 포커스 링 표시 (`focus:ring-2 focus:ring-blue-500`)
+- ✅ **포커스 표시**: 명확한 포커스 링 표시 (`focus:ring-2 focus:ring-slate-500`)
 - ✅ **논리적 순서**: Tab 키 순서가 화면 흐름과 일치
 
 #### 스크린 리더 지원
@@ -932,7 +937,7 @@ space-y-6
 
 ### 평가 필요 배지
 ```jsx
-<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800">
   평가 필요
 </span>
 ```
@@ -970,7 +975,7 @@ space-y-6
 **업무용 UI에서 애니메이션 = 감점**
 
 #### 허용되는 애니메이션
-- **hover 효과**: `hover:bg-blue-700 transition-colors duration-200`
+- **hover 효과**: `hover:bg-slate-900 transition-colors duration-200`
 - **transition**: 최대 200ms (짧게)
 - **로딩**: 스피너 또는 스켈레톤 UI (필수)
 
