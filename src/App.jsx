@@ -4,6 +4,7 @@ import SignupPage from './pages/SignupPage'
 import Dashboard from './pages/Dashboard'
 import DataInput from './pages/DataInput'
 import ItemsPage from './pages/ItemsPage'
+import QualityRecordsPage from './pages/QualityRecordsPage'
 import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
@@ -33,6 +34,14 @@ function App() {
           element={
             <ProtectedRoute>
               <ItemsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/quality-records"
+          element={
+            <ProtectedRoute>
+              <QualityRecordsPage />
             </ProtectedRoute>
           }
         />

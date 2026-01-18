@@ -26,13 +26,7 @@ const DailyProductionList = () => {
     return `${year}-${month}-${day}`
   }
 
-  // 필터 파라미터 구성
-  const filterParams = {}
-  if (selectedItemId) filterParams.itemId = selectedItemId
-  if (startDate) filterParams.startDate = formatDate(startDate)
-  if (endDate) filterParams.endDate = formatDate(endDate)
-
-  const { data: dailyProductions, isLoading, error } = useDailyProductions(filterParams)
+  const { data: dailyProductions, isLoading, error } = useDailyProductions()
   const { data: items } = useItems()
   const deleteMutation = useDeleteDailyProduction()
 
@@ -45,24 +39,54 @@ const DailyProductionList = () => {
     }
   }
 
-  const sortedData = dailyProductions
-    ? [...dailyProductions].sort((a, b) => {
-        if (!sortColumn) return 0
+  // 필터링 및 정렬 적용
+  const filteredAndSortedData = dailyProductions
+    ? [...dailyProductions]
+        .filter((item) => {
+          // 부품 필터
+          if (selectedItemId && item.itemId !== parseInt(selectedItemId)) {
+            return false
+          }
 
-        let aValue = a[sortColumn]
-        let bValue = b[sortColumn]
+          // 시작 날짜 필터
+          if (startDate) {
+            const itemDate = new Date(item.productionDate)
+            const start = new Date(formatDate(startDate))
+            start.setHours(0, 0, 0, 0)
+            if (itemDate < start) {
+              return false
+            }
+          }
 
-        if (sortColumn === 'productionDate') {
-          aValue = new Date(a.productionDate).getTime()
-          bValue = new Date(b.productionDate).getTime()
-        }
+          // 종료 날짜 필터
+          if (endDate) {
+            const itemDate = new Date(item.productionDate)
+            const end = new Date(formatDate(endDate))
+            end.setHours(23, 59, 59, 999)
+            if (itemDate > end) {
+              return false
+            }
+          }
 
-        if (sortDirection === 'asc') {
-          return aValue > bValue ? 1 : -1
-        } else {
-          return aValue < bValue ? 1 : -1
-        }
-      })
+          return true
+        })
+        .sort((a, b) => {
+          if (!sortColumn) return 0
+
+          let aValue = a[sortColumn]
+          let bValue = b[sortColumn]
+
+          if (sortColumn === 'productionDate') {
+            aValue = new Date(a.productionDate).getTime()
+            bValue = new Date(b.productionDate).getTime()
+          }
+
+          if (sortDirection === 'asc') {
+            return aValue > bValue ? 1 : -1
+          } else {
+            return aValue < bValue ? 1 : -1
+          }
+        })
     : []
 
   // 부품명 찾기 헬퍼
@@ -172,7 +196,10 @@ const DailyProductionList = () => {
                 )}
               </th>
               <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 border-b">
-                부품
+                부품 코드
+              </th>
+              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 border-b">
+                부품명
               </th>
               <th
                 className="px-4 py-3 text-right text-sm font-semibold text-gray-700 border-b cursor-pointer hover:bg-gray-100"
@@ -193,16 +220,24 @@ const DailyProductionList = () => {
             </tr>
           </thead>
           <tbody>
-            {sortedData && sortedData.length > 0 ? (
-              sortedData.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50 border-b">
-                  <td className="px-4 py-3 text-sm text-gray-900">{item.productionDate}</td>
-                  <td className="px-4 py-3 text-sm text-gray-900">
-                    {getItemName(item.itemId)}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-900 text-right">
-                    {item.totalQuantity.toLocaleString()}
-                  </td>
+            {filteredAndSortedData && filteredAndSortedData.length > 0 ? (
+              filteredAndSortedData.map((item) => {
+                const itemData = items?.find((i) => i.id === item.itemId)
+                const itemCode = itemData ? itemData.code : '-'
+                const itemName = itemData ? itemData.name : '-'
+
+                return (
+                  <tr key={item.id} className="hover:bg-gray-50 border-b">
+                    <td className="px-4 py-3 text-sm text-gray-900">{item.productionDate}</td>
+                    <td className="px-4 py-3 text-sm text-gray-900">
+                      {itemCode}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-900">
+                      {itemName}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-900 text-right">
+                      {item.totalQuantity.toLocaleString()}
+                    </td>
                   {canDelete && (
                     <td className="px-4 py-3 text-center">
                       <button
@@ -215,16 +250,17 @@ const DailyProductionList = () => {
                     </td>
                   )}
                 </tr>
-              ))
+                )
+              })
             ) : (
-              <tr>
-                <td
-                  colSpan={canDelete ? 4 : 3}
-                  className="px-4 py-6 text-center text-sm text-gray-500"
-                >
-                  데이터가 없습니다.
-                </td>
-              </tr>
+                <tr>
+                  <td
+                    colSpan={canDelete ? 5 : 4}
+                    className="px-4 py-6 text-center text-sm text-gray-500"
+                  >
+                    데이터가 없습니다.
+                  </td>
+                </tr>
             )}
           </tbody>
         </table>

@@ -66,10 +66,12 @@ const SignupForm = () => {
     setErrorMessage('')
 
     try {
-      await apiClient.post('/users/signup', {
+      await apiClient.post('/signup', {
         username: formData.username.trim(),
         password: formData.password,
         role: formData.role
+      }, {
+        baseURL: '' // 회원가입 API는 /api prefix 없이 직접 호출
       })
 
       // 회원가입 성공 시 로그인 페이지로 이동

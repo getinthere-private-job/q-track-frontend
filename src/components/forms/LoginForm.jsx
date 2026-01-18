@@ -9,8 +9,8 @@ const LoginForm = () => {
   const setUser = useUserStore((state) => state.setUser)
 
   const [formData, setFormData] = useState({
-    username: '',
-    password: ''
+    username: 'testmanager',
+    password: 'password123'
   })
   const [errors, setErrors] = useState({})
   const [isLoading, setIsLoading] = useState(false)
@@ -60,9 +60,11 @@ const LoginForm = () => {
     setErrorMessage('')
 
     try {
-      const response = await apiClient.post('/users/login', {
+      const response = await apiClient.post('/login', {
         username: formData.username,
         password: formData.password
+      }, {
+        baseURL: '' // 로그인 API는 /api prefix 없이 직접 호출
       })
 
       // 로그인 성공

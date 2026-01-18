@@ -51,11 +51,11 @@
 - [ ] ✅ **1단계 완료 확인**: 페이지 레이아웃 및 컴포넌트 분리 확인
 
 **2단계: API 연동 및 데이터 검증**
-- [ ] `POST /api/users/login` API 연동 (`LoginForm`)
+- [ ] `POST /login` API 연동 (`LoginForm`)
   - 로그인 성공 시 토큰 저장 (`userStore.setToken()`)
   - 로그인 성공 시 대시보드로 이동
   - 에러 메시지 표시
-- [ ] `POST /api/users/signup` API 연동 (`SignupForm`)
+- [ ] `POST /signup` API 연동 (`SignupForm`)
   - 회원가입 성공 시 로그인 페이지로 이동
   - 에러 메시지 표시
 - [ ] ✅ **2단계 완료 확인**: API 연동 및 동작 확인 (실제 로그인/회원가입 테스트)
@@ -230,6 +230,7 @@
   - `updateQualityRecord(id, data)` - 수정 (`PUT /api/quality-records/{id}`)
   - `deleteQualityRecord(id)` - 삭제 (`DELETE /api/quality-records/{id}`)
   - `evaluateQualityRecord(id, data)` - 평가 (`PUT /api/quality-records/{id}/evaluate`)
+    - Request body: `{ expertEvaluation: string }` (전문가 평가 내용)
   - `getEvaluationRequired()` - 평가 필요 목록 (`GET /api/quality-records/evaluation-required`)
 
 ### 5-2. 품질 기록 입력 폼
@@ -278,6 +279,7 @@
   - 실제 데이터 목록 표시
   - 평가 필요 항목 필터링 동작 확인
 - [ ] `evaluateQualityRecord()` API 호출 (모달에서)
+  - Request body: `{ expertEvaluation: string }` 형식으로 전송
   - 평가 입력 및 저장 동작 확인
 - [ ] ✅ **2단계 완료 확인**: API 연동 및 평가 기능 동작 확인
 
