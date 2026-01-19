@@ -3,15 +3,16 @@ import { apiClient } from './client'
 /**
  * 일별 생산 데이터 목록 조회
  * @param {Object} params - 쿼리 파라미터 (선택사항)
- * @returns {Promise} 일별 생산 데이터 목록
+ * @returns {Promise} 일별 생산 데이터 목록 배열 (Page 객체의 content 추출)
  */
 export const getDailyProductions = async (params = {}) => {
   const queryString = new URLSearchParams(params).toString()
   const url = queryString ? `/daily-productions?${queryString}` : '/daily-productions'
   const response = await apiClient.get(url)
-  // Spring Page 객체 형식인 경우 content 추출, 배열인 경우 그대로 반환
+  // Spring Page 객체 형식: { content: [...], totalElements, totalPages, ... }
   const body = response.data.body
-  return Array.isArray(body) ? body : (body?.content || body)
+  // Page 객체인 경우 content 배열 반환, 배열인 경우 그대로 반환 (하위 호환성)
+  return Array.isArray(body) ? body : (body?.content || [])
 }
 
 /**

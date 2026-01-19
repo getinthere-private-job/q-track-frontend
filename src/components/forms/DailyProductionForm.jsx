@@ -175,9 +175,8 @@ const DailyProductionForm = () => {
             value={formData.itemId}
             onChange={handleChange}
             disabled={editingId !== null || itemsLoading}
-            className={`w-full px-4 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-slate-500 ${
-              errors.itemId ? 'border-red-500' : 'border-gray-300'
-            } disabled:bg-gray-100 disabled:cursor-not-allowed`}
+            className={`w-full px-4 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-slate-500 ${errors.itemId ? 'border-red-500' : 'border-gray-300'
+              } disabled:bg-gray-100 disabled:cursor-not-allowed`}
           >
             <option value="">부품을 선택하세요</option>
             {items &&
@@ -218,9 +217,8 @@ const DailyProductionForm = () => {
             showMonthDropdown
             showYearDropdown
             dropdownMode="select"
-            className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent ${
-              errors.productionDate ? 'border-red-500' : 'border-gray-300'
-            } disabled:bg-gray-100 disabled:cursor-not-allowed`}
+            className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent ${errors.productionDate ? 'border-red-500' : 'border-gray-300'
+              } disabled:bg-gray-100 disabled:cursor-not-allowed`}
             wrapperClassName="w-full"
             calendarClassName="!scale-125"
             popperClassName="z-50"
@@ -243,9 +241,8 @@ const DailyProductionForm = () => {
             onChange={handleChange}
             min="0"
             step="1"
-            className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent ${
-              errors.totalQuantity ? 'border-red-500' : 'border-gray-300'
-            }`}
+            className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent ${errors.totalQuantity ? 'border-red-500' : 'border-gray-300'
+              }`}
             placeholder="총 생산량을 입력하세요"
           />
           {errors.totalQuantity && (
@@ -272,8 +269,8 @@ const DailyProductionForm = () => {
             {createMutation.isPending || updateMutation.isPending
               ? '저장 중...'
               : editingId
-              ? '수정'
-              : '저장'}
+                ? '수정'
+                : '저장'}
           </button>
         </div>
       </form>
