@@ -117,12 +117,13 @@ const DailyProductionForm = () => {
       setErrors({})
     } catch (error) {
       // 에러 처리 (중복 입력 등)
-      if (error.response?.status === 403) {
+      // 서버에서 보내는 메시지 우선 표시
+      if (error.response?.data?.msg) {
+        setErrors({ submit: error.response.data.msg })
+      } else if (error.response?.status === 403) {
         setErrors({ submit: '권한이 없습니다. 해당 기능을 사용할 권한이 필요합니다.' })
       } else if (error.response?.status === 400) {
-        setErrors({ submit: error.response?.data?.msg || '입력 데이터를 확인해주세요.' })
-      } else if (error.response?.data?.msg) {
-        setErrors({ submit: error.response.data.msg })
+        setErrors({ submit: '입력 데이터를 확인해주세요.' })
       } else {
         setErrors({ submit: '저장에 실패했습니다. 다시 시도해주세요.' })
       }

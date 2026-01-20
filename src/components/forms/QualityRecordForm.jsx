@@ -13,11 +13,14 @@ registerLocale('ko', ko)
 
 const QualityRecordForm = () => {
   const user = useUserStore((state) => state.user)
-  const { data: dailyProductions, isLoading: dailyProductionsLoading } = useDailyProductions()
+  const { data: dailyProductionsPage, isLoading: dailyProductionsLoading } = useDailyProductions()
   const { data: processes, isLoading: processesLoading } = useProcesses()
   const { data: items } = useItems()
   const createMutation = useCreateQualityRecord()
   const updateMutation = useUpdateQualityRecord()
+
+  // Page 객체에서 배열 추출
+  const dailyProductions = dailyProductionsPage?.content || []
 
   // 부품명 찾기 헬퍼
   const getItemName = (itemId) => {
@@ -46,7 +49,7 @@ const QualityRecordForm = () => {
 
   // 선택한 날짜에 해당하는 일별 생산 데이터 필터링
   const filteredDailyProductions = useMemo(() => {
-    if (!selectedDate || !dailyProductions) return []
+    if (!selectedDate || !dailyProductions || !Array.isArray(dailyProductions)) return []
     const selectedDateStr = formatDate(selectedDate)
     return dailyProductions.filter((dp) => dp.productionDate === selectedDateStr)
   }, [selectedDate, dailyProductions])

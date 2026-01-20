@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import DatePicker, { registerLocale } from 'react-datepicker'
 import { ko } from 'date-fns/locale'
 import 'react-datepicker/dist/react-datepicker.css'
@@ -16,8 +16,6 @@ registerLocale('ko', ko)
 const QualityRecordList = () => {
   const user = useUserStore((state) => state.user)
   const [showEvaluationOnly, setShowEvaluationOnly] = useState(false)
-  const [sortColumn, setSortColumn] = useState(null)
-  const [sortDirection, setSortDirection] = useState('desc')
   const [evaluatingRecordId, setEvaluatingRecordId] = useState(null)
 
   // 필터 상태
@@ -25,21 +23,62 @@ const QualityRecordList = () => {
   const [startDate, setStartDate] = useState(null)
   const [endDate, setEndDate] = useState(null)
   const [selectedMonth, setSelectedMonth] = useState('')
+  const [currentPage, setCurrentPage] = useState(0)
+  const [pageSize, setPageSize] = useState(10)
 
-  const { data: qualityRecords, isLoading, error } = useQualityRecords()
+  // 필터 변경 시 첫 페이지로 리셋
+  useEffect(() => {
+    setCurrentPage(0)
+  }, [selectedItemId, startDate, endDate, selectedMonth, showEvaluationOnly])
+
+  // Date 객체를 yyyy-MM-dd 형식으로 변환
+  const formatDate = (date) => {
+    if (!date) return ''
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
+  // 년-월 형식으로 변환 (yyyy-MM)
+  const formatYearMonth = (dateString) => {
+    if (!dateString) return ''
+    return dateString.substring(0, 7) // "2025-01-15" → "2025-01"
+  }
+
+  // 서버에 필터 조건과 페이징 파라미터 전달
+  const queryParams = {
+    page: currentPage,
+    size: pageSize,
+    ...(selectedItemId && { itemId: parseInt(selectedItemId) }),
+    ...(startDate && { startDate: formatDate(startDate) }),
+    ...(endDate && { endDate: formatDate(endDate) }),
+    ...(selectedMonth && {
+      year: parseInt(selectedMonth.substring(0, 4)),
+      month: parseInt(selectedMonth.substring(5, 7)),
+    }),
+  }
+
+  const { data: pageData, isLoading, error } = useQualityRecords(queryParams)
   const { data: processes } = useProcesses()
   const { data: items } = useItems()
-  const { data: dailyProductions } = useDailyProductions()
   const { data: systemCodes } = useSystemCodes()
   const deleteMutation = useDeleteQualityRecord()
 
+  // Page 객체에서 데이터 추출 (서버에서 이미 필터링되고 페이징된 데이터)
+  const qualityRecords = pageData?.content || []
+  const totalElements = pageData?.totalElements || 0
+  const totalPages = pageData?.totalPages || 0
+
+  // 필터 변경 핸들러
+  const handleFilterChange = () => {
+    // useEffect에서 currentPage가 0으로 리셋됨
+  }
+
   // 업계 평균 임계값 조회
-  const industryAverageThreshold = useMemo(() => {
-    const code = systemCodes?.find(
-      (c) => c.codeGroup === 'INDUSTRY_AVERAGE' && c.codeKey === 'NG_RATE_THRESHOLD'
-    )
-    return code ? parseFloat(code.codeValue) : 0.5 // 기본값 0.5%
-  }, [systemCodes])
+  const industryAverageThreshold = systemCodes?.find(
+    (c) => c.codeGroup === 'INDUSTRY_AVERAGE' && c.codeKey === 'NG_RATE_THRESHOLD'
+  ) ? parseFloat(systemCodes.find((c) => c.codeGroup === 'INDUSTRY_AVERAGE' && c.codeKey === 'NG_RATE_THRESHOLD').codeValue) : 0.5
 
   // 부품명 찾기 헬퍼
   const getItemName = (itemId) => {
@@ -59,151 +98,57 @@ const QualityRecordList = () => {
     return process ? (process.sequence || 999) : 999 // sequence가 없으면 맨 뒤로
   }
 
-  // 일별 생산 데이터 찾기 헬퍼
-  const getDailyProduction = (dailyProductionId) => {
-    return dailyProductions?.find((dp) => dp.id === dailyProductionId) || null
-  }
-
   // NG 비율 계산
   const calculateNgRate = (record) => {
     const total = record.okQuantity + record.ngQuantity
     return total > 0 ? ((record.ngQuantity / total) * 100).toFixed(2) : '0.00'
   }
 
-  // Date 객체를 yyyy-MM-dd 형식으로 변환
-  const formatDate = (date) => {
-    if (!date) return ''
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
+  // 평가 필요 항목만 필터링 (클라이언트 사이드 - 서버에서 지원하지 않으므로)
+  // 참고: 평가 필요 필터링은 서버에서 지원하지 않으므로 클라이언트에서만 처리
+  const filteredData = showEvaluationOnly
+    ? qualityRecords.filter((record) => record.evaluationRequired)
+    : qualityRecords
+
+  // 정렬 기능 제거 - 서버 정렬 순서 유지
+  // const handleSort = (column) => {
+  //   if (sortColumn === column) {
+  //     setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+  //   } else {
+  //     setSortColumn(column)
+  //     setSortDirection('desc')
+  //   }
+  // }
+
+  // 페이지 변경 핸들러
+  const handlePageChange = (newPage, e) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+    // 스크롤 위치 저장
+    const scrollPosition = window.scrollY || window.pageYOffset
+    setCurrentPage(newPage)
+    // 다음 프레임에서 스크롤 위치 복원
+    requestAnimationFrame(() => {
+      window.scrollTo(0, scrollPosition)
+    })
   }
 
-  // 년-월 형식으로 변환 (yyyy-MM)
-  const formatYearMonth = (dateString) => {
-    if (!dateString) return ''
-    return dateString.substring(0, 7) // "2025-01-15" → "2025-01"
-  }
-
-  // 필터링 및 정렬
-  const filteredAndSortedData = useMemo(() => {
-    let filtered = qualityRecords || []
-
-    // 평가 필요 항목만 필터링
-    if (showEvaluationOnly) {
-      filtered = filtered.filter((record) => record.evaluationRequired)
+  // 페이지 크기 변경 핸들러
+  const handlePageSizeChange = (newSize, e) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
     }
-
-    // 일별 생산 데이터 기반 필터링
-    filtered = filtered.filter((record) => {
-      const dailyProduction = getDailyProduction(record.dailyProductionId)
-      if (!dailyProduction) return false
-
-      const productionDate = dailyProduction.productionDate
-      const itemId = dailyProduction.itemId
-
-      // 아이템별 필터
-      if (selectedItemId && itemId !== parseInt(selectedItemId)) {
-        return false
-      }
-
-      // 일별 필터 (시작일)
-      if (startDate) {
-        const itemDate = new Date(productionDate)
-        const start = new Date(formatDate(startDate))
-        start.setHours(0, 0, 0, 0)
-        if (itemDate < start) {
-          return false
-        }
-      }
-
-      // 일별 필터 (종료일)
-      if (endDate) {
-        const itemDate = new Date(productionDate)
-        const end = new Date(formatDate(endDate))
-        end.setHours(23, 59, 59, 999)
-        if (itemDate > end) {
-          return false
-        }
-      }
-
-      // 월별 필터
-      if (selectedMonth) {
-        const recordMonth = formatYearMonth(productionDate)
-        if (recordMonth !== selectedMonth) {
-          return false
-        }
-      }
-
-      return true
+    // 스크롤 위치 저장
+    const scrollPosition = window.scrollY || window.pageYOffset
+    setPageSize(parseInt(newSize))
+    setCurrentPage(0)
+    // 다음 프레임에서 스크롤 위치 복원
+    requestAnimationFrame(() => {
+      window.scrollTo(0, scrollPosition)
     })
-
-    // 정렬 (날짜별, 부품코드별 우선 정렬)
-    filtered = [...filtered].sort((a, b) => {
-      // 사용자 지정 정렬이 있으면 해당 정렬 적용
-      if (sortColumn) {
-        let aValue = a[sortColumn]
-        let bValue = b[sortColumn]
-
-        if (sortColumn === 'ngRate') {
-          aValue = parseFloat(calculateNgRate(a))
-          bValue = parseFloat(calculateNgRate(b))
-        } else if (sortColumn === 'evaluationRequired') {
-          aValue = a.evaluationRequired ? 1 : 0
-          bValue = b.evaluationRequired ? 1 : 0
-        }
-
-        if (sortDirection === 'asc') {
-          return aValue > bValue ? 1 : -1
-        } else {
-          return aValue < bValue ? 1 : -1
-        }
-      }
-
-      // 기본 정렬: 날짜별 → 부품코드별
-      const dailyProductionA = getDailyProduction(a.dailyProductionId)
-      const dailyProductionB = getDailyProduction(b.dailyProductionId)
-
-      const dateA = dailyProductionA ? dailyProductionA.productionDate : ''
-      const dateB = dailyProductionB ? dailyProductionB.productionDate : ''
-
-      // 날짜 비교
-      if (dateA !== dateB) {
-        return dateA > dateB ? 1 : -1
-      }
-
-      // 날짜가 같으면 부품코드 비교
-      const itemA = dailyProductionA && items ? items.find((i) => i.id === dailyProductionA.itemId) : null
-      const itemB = dailyProductionB && items ? items.find((i) => i.id === dailyProductionB.itemId) : null
-
-      const codeA = itemA ? itemA.code : ''
-      const codeB = itemB ? itemB.code : ''
-
-      if (codeA !== codeB) {
-        return codeA > codeB ? 1 : -1
-      }
-
-      // 날짜와 부품코드가 같으면 공정 순서로 정렬 (W → P → 검)
-      const sequenceA = getProcessSequence(a.processId)
-      const sequenceB = getProcessSequence(b.processId)
-
-      if (sequenceA !== sequenceB) {
-        return sequenceA > sequenceB ? 1 : -1
-      }
-
-      return 0
-    })
-
-    return filtered
-  }, [qualityRecords, showEvaluationOnly, sortColumn, sortDirection, processes, items, dailyProductions, selectedItemId, startDate, endDate, selectedMonth])
-
-  const handleSort = (column) => {
-    if (sortColumn === column) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
-    } else {
-      setSortColumn(column)
-      setSortDirection('desc')
-    }
   }
 
   // 권한 확인
@@ -236,7 +181,10 @@ const QualityRecordList = () => {
             <input
               type="checkbox"
               checked={showEvaluationOnly}
-              onChange={(e) => setShowEvaluationOnly(e.target.checked)}
+              onChange={(e) => {
+                setShowEvaluationOnly(e.target.checked)
+                handleFilterChange()
+              }}
               className="w-4 h-4 text-slate-800 border-gray-300 rounded focus:ring-slate-500"
             />
             <span className="text-sm text-gray-700">평가 필요만 보기</span>
@@ -275,7 +223,10 @@ const QualityRecordList = () => {
               <label className="block text-sm font-medium text-gray-700 mb-2">부품 코드</label>
               <select
                 value={selectedItemId}
-                onChange={(e) => setSelectedItemId(e.target.value)}
+                onChange={(e) => {
+                  setSelectedItemId(e.target.value)
+                  handleFilterChange()
+                }}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-slate-500"
               >
                 <option value="">전체</option>
@@ -296,6 +247,7 @@ const QualityRecordList = () => {
                 onChange={(date) => {
                   setStartDate(date)
                   setSelectedMonth('') // 일별 필터 선택 시 월별 필터 초기화
+                  handleFilterChange()
                 }}
                 locale="ko"
                 dateFormat="yyyy-MM-dd"
@@ -318,6 +270,7 @@ const QualityRecordList = () => {
                 onChange={(date) => {
                   setEndDate(date)
                   setSelectedMonth('') // 일별 필터 선택 시 월별 필터 초기화
+                  handleFilterChange()
                 }}
                 locale="ko"
                 dateFormat="yyyy-MM-dd"
@@ -342,6 +295,7 @@ const QualityRecordList = () => {
                   setSelectedMonth(e.target.value)
                   setStartDate(null) // 월별 필터 선택 시 일별 필터 초기화
                   setEndDate(null)
+                  handleFilterChange()
                 }}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-slate-500"
               />
@@ -372,27 +326,11 @@ const QualityRecordList = () => {
                 <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700 border-b">
                   NG 수량
                 </th>
-                <th
-                  className="px-4 py-3 text-right text-sm font-semibold text-gray-700 border-b cursor-pointer hover:bg-gray-100"
-                  onClick={() => handleSort('ngRate')}
-                >
+                <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700 border-b">
                   NG 비율
-                  {sortColumn === 'ngRate' && (
-                    <span className="ml-1 text-slate-800">
-                      {sortDirection === 'asc' ? '↑' : '↓'}
-                    </span>
-                  )}
                 </th>
-                <th
-                  className="px-4 py-3 text-left text-sm font-semibold text-gray-700 border-b cursor-pointer hover:bg-gray-100"
-                  onClick={() => handleSort('evaluationRequired')}
-                >
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 border-b">
                   평가 필요
-                  {sortColumn === 'evaluationRequired' && (
-                    <span className="ml-1 text-slate-800">
-                      {sortDirection === 'asc' ? '↑' : '↓'}
-                    </span>
-                  )}
                 </th>
                 {(canEvaluate || canDelete) && (
                   <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 border-b">
@@ -402,29 +340,27 @@ const QualityRecordList = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredAndSortedData && filteredAndSortedData.length > 0 ? (
-                filteredAndSortedData.map((record, index) => {
+              {filteredData && filteredData.length > 0 ? (
+                filteredData.map((record, index) => {
                   const ngRate = calculateNgRate(record)
                   const isExceedingThreshold = parseFloat(ngRate) > 0.5
-                  const dailyProduction = getDailyProduction(record.dailyProductionId)
-                  const productionDate = dailyProduction ? dailyProduction.productionDate : '-'
-                  const item = dailyProduction && items ? items.find((i) => i.id === dailyProduction.itemId) : null
+                  
+                  // record에서 직접 정보 가져오기 (서버에서 이미 조인된 데이터)
+                  const productionDate = record.productionDate || '-'
+                  const item = items ? items.find((i) => i.id === record.itemId) : null
                   const itemCode = item ? item.code : '-'
                   const itemName = item ? item.name : '-'
-
+                  
                   // 같은 생산일+부품코드 그룹 확인
-                  const prevRecord = index > 0 ? filteredAndSortedData[index - 1] : null
-                  const nextRecord = index < filteredAndSortedData.length - 1 ? filteredAndSortedData[index + 1] : null
+                  const prevRecord = index > 0 ? filteredData[index - 1] : null
+                  const nextRecord = index < filteredData.length - 1 ? filteredData[index + 1] : null
 
-                  const prevDailyProduction = prevRecord ? getDailyProduction(prevRecord.dailyProductionId) : null
-                  const nextDailyProduction = nextRecord ? getDailyProduction(nextRecord.dailyProductionId) : null
-
-                  const prevDate = prevDailyProduction ? prevDailyProduction.productionDate : null
-                  const prevItem = prevDailyProduction && items ? items.find((i) => i.id === prevDailyProduction.itemId) : null
+                  const prevDate = prevRecord ? prevRecord.productionDate : null
+                  const prevItem = prevRecord && items ? items.find((i) => i.id === prevRecord.itemId) : null
                   const prevItemCode = prevItem ? prevItem.code : null
 
-                  const nextDate = nextDailyProduction ? nextDailyProduction.productionDate : null
-                  const nextItem = nextDailyProduction && items ? items.find((i) => i.id === nextDailyProduction.itemId) : null
+                  const nextDate = nextRecord ? nextRecord.productionDate : null
+                  const nextItem = nextRecord && items ? items.find((i) => i.id === nextRecord.itemId) : null
                   const nextItemCode = nextItem ? nextItem.code : null
 
                   // 그룹의 첫 번째/마지막 행인지 확인
@@ -435,17 +371,16 @@ const QualityRecordList = () => {
                   const groupBorderClass = isGroupStart && isGroupEnd
                     ? 'border-2 border-gray-300' // 단독 행
                     : isGroupStart
-                    ? 'border-t-2 border-l-2 border-r-2 border-gray-300' // 그룹 시작
-                    : isGroupEnd
-                    ? 'border-b-2 border-l-2 border-r-2 border-gray-300' // 그룹 끝
-                    : 'border-l-2 border-r-2 border-gray-300' // 그룹 중간
+                      ? 'border-t-2 border-l-2 border-r-2 border-gray-300' // 그룹 시작
+                      : isGroupEnd
+                        ? 'border-b-2 border-l-2 border-r-2 border-gray-300' // 그룹 끝
+                        : 'border-l-2 border-r-2 border-gray-300' // 그룹 중간
 
                   return (
                     <tr
                       key={record.id}
-                      className={`hover:bg-gray-50 ${groupBorderClass} ${
-                        record.evaluationRequired ? 'bg-slate-50 border-l-4 border-l-slate-400' : ''
-                      }`}
+                      className={`hover:bg-gray-50 ${groupBorderClass} ${record.evaluationRequired ? 'bg-slate-50 border-l-4 border-l-slate-400' : ''
+                        }`}
                     >
                       <td className="px-4 py-3 text-sm text-gray-900">
                         {productionDate}
@@ -466,9 +401,8 @@ const QualityRecordList = () => {
                         {record.ngQuantity.toLocaleString()}
                       </td>
                       <td
-                        className={`px-4 py-3 text-sm text-right ${
-                          isExceedingThreshold ? 'text-red-600 font-semibold' : 'text-gray-900'
-                        }`}
+                        className={`px-4 py-3 text-sm text-right ${isExceedingThreshold ? 'text-red-600 font-semibold' : 'text-gray-900'
+                          }`}
                       >
                         {ngRate}%
                       </td>
@@ -520,6 +454,94 @@ const QualityRecordList = () => {
             </tbody>
           </table>
         </div>
+
+        {/* 페이징 컨트롤 */}
+        {totalPages > 0 && (
+          <div className="mt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-700">페이지당 항목 수:</span>
+              <select
+                value={pageSize}
+                onChange={(e) => handlePageSizeChange(e.target.value, e)}
+                className="px-3 py-1 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-slate-500 text-sm"
+              >
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-700">
+                총 {totalElements.toLocaleString()}개 중 {currentPage * pageSize + 1}-{Math.min((currentPage + 1) * pageSize, totalElements).toLocaleString()}개
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={(e) => handlePageChange(0, e)}
+                disabled={currentPage === 0}
+                className="px-3 py-1 text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                처음
+              </button>
+              <button
+                type="button"
+                onClick={(e) => handlePageChange(currentPage - 1, e)}
+                disabled={currentPage === 0}
+                className="px-3 py-1 text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                이전
+              </button>
+
+              {/* 페이지 번호 버튼 */}
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum
+                if (totalPages <= 5) {
+                  pageNum = i
+                } else if (currentPage < 2) {
+                  pageNum = i
+                } else if (currentPage > totalPages - 3) {
+                  pageNum = totalPages - 5 + i
+                } else {
+                  pageNum = currentPage - 2 + i
+                }
+
+                return (
+                  <button
+                    key={pageNum}
+                    type="button"
+                    onClick={(e) => handlePageChange(pageNum, e)}
+                    className={`px-3 py-1 text-sm border border-gray-300 rounded-lg transition-colors ${currentPage === pageNum
+                      ? 'bg-slate-800 text-white border-slate-800'
+                      : 'bg-white hover:bg-gray-50'
+                      }`}
+                  >
+                    {pageNum + 1}
+                  </button>
+                )
+              })}
+
+              <button
+                type="button"
+                onClick={(e) => handlePageChange(currentPage + 1, e)}
+                disabled={currentPage >= totalPages - 1}
+                className="px-3 py-1 text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                다음
+              </button>
+              <button
+                type="button"
+                onClick={(e) => handlePageChange(totalPages - 1, e)}
+                disabled={currentPage >= totalPages - 1}
+                className="px-3 py-1 text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                마지막
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 평가 모달 */}

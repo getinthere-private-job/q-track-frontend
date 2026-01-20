@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import DatePicker, { registerLocale } from 'react-datepicker'
 import { ko } from 'date-fns/locale'
 import 'react-datepicker/dist/react-datepicker.css'
@@ -14,8 +14,8 @@ const DailyProductionList = () => {
   const [selectedItemId, setSelectedItemId] = useState('')
   const [startDate, setStartDate] = useState(null)
   const [endDate, setEndDate] = useState(null)
-  const [sortColumn, setSortColumn] = useState('productionDate') // 기본값: 날짜 정렬
-  const [sortDirection, setSortDirection] = useState('desc') // 기본값: 내림차순
+  const [currentPage, setCurrentPage] = useState(0)
+  const [pageSize, setPageSize] = useState(10)
 
   // Date 객체를 yyyy-MM-dd 형식으로 변환
   const formatDate = (date) => {
@@ -26,66 +26,64 @@ const DailyProductionList = () => {
     return `${year}-${month}-${day}`
   }
 
-  const { data: dailyProductions, isLoading, error } = useDailyProductions()
+  // 필터 변경 시 첫 페이지로 리셋
+  useEffect(() => {
+    setCurrentPage(0)
+  }, [selectedItemId, startDate, endDate])
+
+  // 서버에 필터 조건과 페이징 파라미터 전달
+  const queryParams = {
+    page: currentPage,
+    size: pageSize,
+    ...(selectedItemId && { itemId: parseInt(selectedItemId) }),
+    ...(startDate && { startDate: formatDate(startDate) }),
+    ...(endDate && { endDate: formatDate(endDate) }),
+  }
+
+  const { data: pageData, isLoading, error } = useDailyProductions(queryParams)
   const { data: items } = useItems()
   const deleteMutation = useDeleteDailyProduction()
 
-  const handleSort = (column) => {
-    if (sortColumn === column) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
-    } else {
-      setSortColumn(column)
-      setSortDirection('desc')
-    }
+  // Page 객체에서 데이터 추출 (서버에서 이미 필터링되고 페이징된 데이터)
+  const dailyProductions = pageData?.content || []
+  const totalElements = pageData?.totalElements || 0
+  const totalPages = pageData?.totalPages || 0
+
+  // 필터 변경 핸들러
+  const handleFilterChange = () => {
+    // useEffect에서 currentPage가 0으로 리셋됨
   }
 
-  // 필터링 및 정렬 적용
-  const filteredAndSortedData = dailyProductions
-    ? [...dailyProductions]
-        .filter((item) => {
-          // 부품 필터
-          if (selectedItemId && item.itemId !== parseInt(selectedItemId)) {
-            return false
-          }
+  // 페이지 변경 핸들러
+  const handlePageChange = (newPage, e) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+    // 스크롤 위치 저장
+    const scrollPosition = window.scrollY || window.pageYOffset
+    setCurrentPage(newPage)
+    // 다음 프레임에서 스크롤 위치 복원
+    requestAnimationFrame(() => {
+      window.scrollTo(0, scrollPosition)
+    })
+  }
 
-          // 시작 날짜 필터
-          if (startDate) {
-            const itemDate = new Date(item.productionDate)
-            const start = new Date(formatDate(startDate))
-            start.setHours(0, 0, 0, 0)
-            if (itemDate < start) {
-              return false
-            }
-          }
-
-          // 종료 날짜 필터
-          if (endDate) {
-            const itemDate = new Date(item.productionDate)
-            const end = new Date(formatDate(endDate))
-            end.setHours(23, 59, 59, 999)
-            if (itemDate > end) {
-              return false
-            }
-          }
-
-          return true
-        })
-        .sort((a, b) => {
-          let aValue = a[sortColumn]
-          let bValue = b[sortColumn]
-
-          if (sortColumn === 'productionDate') {
-            aValue = new Date(a.productionDate).getTime()
-            bValue = new Date(b.productionDate).getTime()
-          }
-
-          if (sortDirection === 'asc') {
-            return aValue > bValue ? 1 : -1
-          } else {
-            return aValue < bValue ? 1 : -1
-          }
-        })
-    : []
+  // 페이지 크기 변경 핸들러
+  const handlePageSizeChange = (newSize, e) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+    // 스크롤 위치 저장
+    const scrollPosition = window.scrollY || window.pageYOffset
+    setPageSize(parseInt(newSize))
+    setCurrentPage(0)
+    // 다음 프레임에서 스크롤 위치 복원
+    requestAnimationFrame(() => {
+      window.scrollTo(0, scrollPosition)
+    })
+  }
 
   // 부품명 찾기 헬퍼
   const getItemName = (itemId) => {
@@ -124,7 +122,10 @@ const DailyProductionList = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">부품 필터</label>
             <select
               value={selectedItemId}
-              onChange={(e) => setSelectedItemId(e.target.value)}
+              onChange={(e) => {
+                setSelectedItemId(e.target.value)
+                handleFilterChange()
+              }}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-slate-500"
             >
               <option value="">전체</option>
@@ -142,7 +143,10 @@ const DailyProductionList = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">시작 날짜</label>
             <DatePicker
               selected={startDate}
-              onChange={(date) => setStartDate(date)}
+              onChange={(date) => {
+                setStartDate(date)
+                handleFilterChange()
+              }}
               locale="ko"
               dateFormat="yyyy-MM-dd"
               placeholderText="시작 날짜 선택"
@@ -161,7 +165,10 @@ const DailyProductionList = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">종료 날짜</label>
             <DatePicker
               selected={endDate}
-              onChange={(date) => setEndDate(date)}
+              onChange={(date) => {
+                setEndDate(date)
+                handleFilterChange()
+              }}
               locale="ko"
               dateFormat="yyyy-MM-dd"
               placeholderText="종료 날짜 선택"
@@ -182,16 +189,8 @@ const DailyProductionList = () => {
         <table className="w-full border-collapse">
           <thead className="bg-gray-50">
             <tr>
-              <th
-                className="px-4 py-3 text-left text-sm font-semibold text-gray-700 border-b cursor-pointer hover:bg-gray-100"
-                onClick={() => handleSort('productionDate')}
-              >
+              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 border-b">
                 생산일
-                {sortColumn === 'productionDate' && (
-                  <span className="ml-1 text-slate-800">
-                    {sortDirection === 'asc' ? '↑' : '↓'}
-                  </span>
-                )}
               </th>
               <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 border-b">
                 부품 코드
@@ -199,16 +198,8 @@ const DailyProductionList = () => {
               <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 border-b">
                 부품명
               </th>
-              <th
-                className="px-4 py-3 text-right text-sm font-semibold text-gray-700 border-b cursor-pointer hover:bg-gray-100"
-                onClick={() => handleSort('totalQuantity')}
-              >
+              <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700 border-b">
                 총 생산량
-                {sortColumn === 'totalQuantity' && (
-                  <span className="ml-1 text-slate-800">
-                    {sortDirection === 'asc' ? '↑' : '↓'}
-                  </span>
-                )}
               </th>
               {canDelete && (
                 <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 border-b">
@@ -218,8 +209,8 @@ const DailyProductionList = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredAndSortedData && filteredAndSortedData.length > 0 ? (
-              filteredAndSortedData.map((item) => {
+            {dailyProductions && dailyProductions.length > 0 ? (
+              dailyProductions.map((item) => {
                 const itemData = items?.find((i) => i.id === item.itemId)
                 const itemCode = itemData ? itemData.code : '-'
                 const itemName = itemData ? itemData.name : '-'
@@ -263,6 +254,95 @@ const DailyProductionList = () => {
           </tbody>
         </table>
       </div>
+
+      {/* 페이징 컨트롤 */}
+      {totalPages > 0 && (
+        <div className="mt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-700">페이지당 항목 수:</span>
+            <select
+              value={pageSize}
+              onChange={(e) => handlePageSizeChange(e.target.value, e)}
+              className="px-3 py-1 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-slate-500 text-sm"
+            >
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-700">
+              총 {totalElements.toLocaleString()}개 중 {currentPage * pageSize + 1}-{Math.min((currentPage + 1) * pageSize, totalElements).toLocaleString()}개
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={(e) => handlePageChange(0, e)}
+              disabled={currentPage === 0}
+              className="px-3 py-1 text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              처음
+            </button>
+            <button
+              type="button"
+              onClick={(e) => handlePageChange(currentPage - 1, e)}
+              disabled={currentPage === 0}
+              className="px-3 py-1 text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              이전
+            </button>
+
+            {/* 페이지 번호 버튼 */}
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              let pageNum
+              if (totalPages <= 5) {
+                pageNum = i
+              } else if (currentPage < 2) {
+                pageNum = i
+              } else if (currentPage > totalPages - 3) {
+                pageNum = totalPages - 5 + i
+              } else {
+                pageNum = currentPage - 2 + i
+              }
+
+                return (
+                  <button
+                    key={pageNum}
+                    type="button"
+                    onClick={(e) => handlePageChange(pageNum, e)}
+                    className={`px-3 py-1 text-sm border border-gray-300 rounded-lg transition-colors ${
+                      currentPage === pageNum
+                        ? 'bg-slate-800 text-white border-slate-800'
+                        : 'bg-white hover:bg-gray-50'
+                    }`}
+                  >
+                    {pageNum + 1}
+                  </button>
+                )
+            })}
+
+            <button
+              type="button"
+              onClick={(e) => handlePageChange(currentPage + 1, e)}
+              disabled={currentPage >= totalPages - 1}
+              className="px-3 py-1 text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              다음
+            </button>
+            <button
+              type="button"
+              onClick={(e) => handlePageChange(totalPages - 1, e)}
+              disabled={currentPage >= totalPages - 1}
+              className="px-3 py-1 text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              마지막
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
